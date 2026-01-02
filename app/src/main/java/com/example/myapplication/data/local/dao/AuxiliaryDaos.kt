@@ -17,6 +17,12 @@ interface AuthorDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAuthor(author: Author): Long
     
+    @Update
+    suspend fun updateAuthor(author: Author)
+
+    @Delete
+    suspend fun deleteAuthor(author: Author)
+
     @Query("SELECT * FROM authors WHERE name = :name LIMIT 1")
     suspend fun getAuthorByName(name: String): Author?
 }
@@ -29,6 +35,12 @@ interface GenreDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertGenre(genre: Genre): Long
     
+    @Update
+    suspend fun updateGenre(genre: Genre)
+
+    @Delete
+    suspend fun deleteGenre(genre: Genre)
+
     @Query("SELECT * FROM genres WHERE name = :name LIMIT 1")
     suspend fun getGenreByName(name: String): Genre?
 }
@@ -41,6 +53,12 @@ interface TagDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTag(tag: Tag): Long
     
+    @Update
+    suspend fun updateTag(tag: Tag)
+
+    @Delete
+    suspend fun deleteTag(tag: Tag)
+
     @Query("SELECT * FROM tags WHERE name = :name LIMIT 1")
     suspend fun getTagByName(name: String): Tag?
 }

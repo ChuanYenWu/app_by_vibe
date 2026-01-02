@@ -46,7 +46,7 @@ fun SortFilterBottomSheet(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Divider()
+            HorizontalDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("Filter By Status", style = MaterialTheme.typography.titleLarge)

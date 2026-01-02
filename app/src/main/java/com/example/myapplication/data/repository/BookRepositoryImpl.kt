@@ -177,4 +177,11 @@ class BookRepositoryImpl(
             existing?.id ?: tagDao.insertTag(tag)
         }
     }
+
+    override suspend fun updateAuthor(author: Author) = authorDao.updateAuthor(author)
+    override suspend fun deleteAuthor(author: Author) = authorDao.deleteAuthor(author)
+    override suspend fun updateGenre(genre: Genre) = genreDao.updateGenre(genre)
+    override suspend fun deleteGenre(genre: Genre) = genreDao.deleteGenre(genre)
+    override suspend fun updateTag(tag: Tag) = tagDao.updateTag(tag)
+    override suspend fun deleteTag(tag: Tag) = tagDao.deleteTag(tag)
 }

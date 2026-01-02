@@ -8,20 +8,36 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.myapplication.data.local.entity.*
+import com.example.myapplication.data.local.entity.Author
+import com.example.myapplication.data.local.entity.Genre
+import com.example.myapplication.data.local.entity.Tag
+import com.example.myapplication.data.local.entity.Book
+import com.example.myapplication.data.local.entity.BookWithInfo
+import com.example.myapplication.data.local.entity.BookLink
 import com.example.myapplication.ui.components.AutocompleteTagInput
 import com.example.myapplication.ui.components.DynamicLinkList
 import com.example.myapplication.ui.viewmodel.BookViewModel
+import com.example.myapplication.util.ParsedBookInfo
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditBookScreen(
+    bookId: Long? = null,
+    initialBookInfo: ParsedBookInfo? = null,
     onNavigateBack: () -> Unit,
     onNavigateToDetail: (Long) -> Unit,
     viewModel: BookViewModel = viewModel(factory = BookViewModel.Factory)
 ) {
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Existing Book Data (if editing)
+    val existingBookWithInfo by if (bookId != null) {
+        viewModel.getBookById(bookId).collectAsState(initial = null)
+    } else {
+        remember { mutableStateOf(null) }
+    }
     
     // Data from ViewModel
     val allAuthors by viewModel.allAuthors.collectAsState()
@@ -32,29 +48,80 @@ fun AddEditBookScreen(
     var title by remember { mutableStateOf("") }
     var readingStatus by remember { mutableStateOf("想讀") }
     var description by remember { mutableStateOf("") }
-    var rating by remember { mutableStateOf(0f) } // Simple Float implementation
+    var rating by remember { mutableStateOf(0f) }
 
     // Selection State
-    var selectedAuthors by remember { mutableStateOf(listOf<Author>()) }
-    var selectedGenres by remember { mutableStateOf(listOf<Genre>()) }
-    var selectedTags by remember { mutableStateOf(listOf<Tag>()) }
-    var links by remember { mutableStateOf(listOf<BookLink>()) }
+    var selectedAuthors: List<Author> by remember { mutableStateOf(emptyList()) }
+    var selectedGenres: List<Genre> by remember { mutableStateOf(emptyList()) }
+    var selectedTags: List<Tag> by remember { mutableStateOf(emptyList()) }
+    var links: List<BookLink> by remember { mutableStateOf(emptyList()) }
+
+    // Load existing data logic
+    LaunchedEffect(existingBookWithInfo) {
+        existingBookWithInfo?.let { info ->
+            if (title.isEmpty()) { // Only load if form is currently empty (initial load)
+                title = info.book.title
+                readingStatus = info.book.readingStatus
+                description = info.book.description ?: ""
+                rating = info.book.rating ?: 0f
+                selectedAuthors = info.authors
+                selectedGenres = info.genres
+                selectedTags = info.tags
+                links = info.links
+            }
+        }
+    }
+
+    // Pre-fill logic (Share Intent)
+    LaunchedEffect(initialBookInfo) {
+        initialBookInfo?.let { info ->
+            title = info.title
+            description = info.description
+            
+            // Map strings to objects
+            // Note: Since IDs are 0, repository will handle creation or matching by name if implemented
+            selectedAuthors = info.authors.map { Author(name = it) }
+            selectedGenres = info.genres.map { Genre(name = it) }
+            
+            if (info.sourceUrl.isNotBlank()) {
+                links = listOf(BookLink(bookId = 0, linkText = "Source", url = info.sourceUrl))
+            }
+
+            scope.launch {
+                snackbarHostState.showSnackbar("Information pre-filled from web page.")
+            }
+        }
+    }
 
     // Duplicate Check State
     var showDuplicateDialog by remember { mutableStateOf(false) }
     var duplicateBook by remember { mutableStateOf<Book?>(null) }
 
     fun saveBook() {
-        viewModel.addBook(
-            title = title,
-            readingStatus = readingStatus,
-            rating = if (rating > 0) rating else null,
-            description = description,
-            authors = selectedAuthors,
-            genres = selectedGenres,
-            tags = selectedTags,
-            links = links
-        )
+        if (bookId == null) {
+            viewModel.addBook(
+                title = title,
+                readingStatus = readingStatus,
+                rating = if (rating > 0) rating else null,
+                description = description,
+                authors = selectedAuthors,
+                genres = selectedGenres,
+                tags = selectedTags,
+                links = links
+            )
+        } else {
+            viewModel.updateBook(
+                id = bookId,
+                title = title,
+                readingStatus = readingStatus,
+                rating = if (rating > 0) rating else null,
+                description = description,
+                authors = selectedAuthors,
+                genres = selectedGenres,
+                tags = selectedTags,
+                links = links
+            )
+        }
         onNavigateBack()
     }
 
@@ -73,7 +140,8 @@ fun AddEditBookScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Add Book") }) }
+        topBar = { TopAppBar(title = { Text(if (bookId == null) "Add Book" else "Edit Book") }) },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         Column(
             modifier = Modifier

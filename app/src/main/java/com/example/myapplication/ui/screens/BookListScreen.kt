@@ -6,7 +6,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -21,6 +22,7 @@ import com.example.myapplication.ui.components.SortFilterBottomSheet
 fun BookListScreen(
     onAddBookClick: () -> Unit,
     onBookClick: (Long) -> Unit,
+    onSettingsClick: () -> Unit,
     viewModel: BookViewModel = viewModel(factory = BookViewModel.Factory)
 ) {
     val books by viewModel.allBooks.collectAsState()
@@ -35,7 +37,10 @@ fun BookListScreen(
                 title = { Text("Book List") },
                 actions = {
                     IconButton(onClick = { showSortFilterSheet = true }) {
-                        Icon(Icons.Default.List, contentDescription = "Sort & Filter")
+                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Sort & Filter")
+                    }
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                 }
             ) 
@@ -92,7 +97,11 @@ fun BookItem(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = bookWithInfo.book.title, style = MaterialTheme.typography.titleMedium)
-            Text(text = "Status: ${bookWithInfo.book.readingStatus}", style = MaterialTheme.typography.bodyMedium)
+            val authors = bookWithInfo.authors.joinToString(", ") { it.name }
+            if (authors.isNotBlank()) {
+                Text(text = authors, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+            }
+            Text(text = "Status: ${bookWithInfo.book.readingStatus}", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

@@ -94,11 +94,42 @@ class BookViewModel(private val repository: BookRepository) : ViewModel() {
         }
     }
     
+    fun updateBook(
+        id: Long,
+        title: String,
+        readingStatus: String,
+        rating: Float?,
+        description: String?,
+        authors: List<Author>,
+        genres: List<Genre>,
+        tags: List<Tag>,
+        links: List<BookLink>
+    ) {
+        viewModelScope.launch {
+            val book = Book(
+                id = id,
+                title = title,
+                readingStatus = readingStatus,
+                rating = rating,
+                description = description
+            )
+            repository.updateBook(book, authors, genres, tags, links)
+        }
+    }
+    
     suspend fun checkDuplicateBook(title: String): Book? {
         return repository.getBookByTitle(title)
     }
 
     fun getBookById(id: Long) = repository.getBookById(id)
+
+    // Entity Management Methods
+    fun updateAuthor(author: Author) { viewModelScope.launch { repository.updateAuthor(author) } }
+    fun deleteAuthor(author: Author) { viewModelScope.launch { repository.deleteAuthor(author) } }
+    fun updateGenre(genre: Genre) { viewModelScope.launch { repository.updateGenre(genre) } }
+    fun deleteGenre(genre: Genre) { viewModelScope.launch { repository.deleteGenre(genre) } }
+    fun updateTag(tag: Tag) { viewModelScope.launch { repository.updateTag(tag) } }
+    fun deleteTag(tag: Tag) { viewModelScope.launch { repository.deleteTag(tag) } }
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {

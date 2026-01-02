@@ -40,4 +40,12 @@ interface BookRepository {
     // Helper methods for fetching existing entities (for duplicate checking, etc.)
     suspend fun getBookByTitle(title: String): Book?
     suspend fun getAuthorByName(name: String): Author?
+
+    // Entity Management
+    suspend fun updateAuthor(author: Author)
+    suspend fun deleteAuthor(author: Author)
+    suspend fun updateGenre(genre: Genre)
+    suspend fun deleteGenre(genre: Genre)
+    suspend fun updateTag(tag: Tag)
+    suspend fun deleteTag(tag: Tag)
 }

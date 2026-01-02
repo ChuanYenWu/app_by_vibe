@@ -5,13 +5,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -23,8 +25,10 @@ import com.example.myapplication.ui.viewmodel.BookViewModel
 fun BookDetailScreen(
     bookId: Long,
     onNavigateBack: () -> Unit,
+    onEditClick: (Long) -> Unit,
     viewModel: BookViewModel = viewModel(factory = BookViewModel.Factory)
 ) {
+    val uriHandler = LocalUriHandler.current
     val bookWithInfo by viewModel.getBookById(bookId).collectAsState(initial = null)
 
     Scaffold(
@@ -33,7 +37,12 @@ fun BookDetailScreen(
                 title = { Text("Book Details") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { onEditClick(bookId) }) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
                 }
             )
@@ -69,7 +78,7 @@ fun BookDetailScreen(
                     }
                 }
 
-                Divider(modifier = Modifier.padding(vertical = 16.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
                 // Authors
                 Text("Authors", style = MaterialTheme.typography.titleMedium)
@@ -130,7 +139,15 @@ fun BookDetailScreen(
                              modifier = Modifier
                                  .fillMaxWidth()
                                  .padding(vertical = 4.dp)
-                                 .clickable { /* TODO: Open Link */ }
+                                 .clickable { 
+                                     if (link.url.isNotBlank()) {
+                                         try {
+                                             uriHandler.openUri(link.url)
+                                         } catch (e: Exception) {
+                                             // Silent fail
+                                         }
+                                     }
+                                 }
                          ) {
                              Text(text = link.linkText.ifBlank { link.url }, color = MaterialTheme.colorScheme.primary)
                          }
