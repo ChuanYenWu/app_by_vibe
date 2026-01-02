@@ -22,11 +22,18 @@ class BookRepositoryImpl(
         filterReadingStatus: String?,
         filterAuthorIds: List<Long>,
         filterGenreIds: List<Long>,
-        filterTagIds: List<Long>
+        filterTagIds: List<Long>,
+        searchQuery: String?
     ): Flow<List<BookWithInfo>> {
         val queryBuilder = StringBuilder("SELECT DISTINCT b.* FROM books b")
         val args = mutableListOf<Any>()
         val conditions = mutableListOf<String>()
+
+        // Text Search
+        if (!searchQuery.isNullOrBlank()) {
+            conditions.add("b.title LIKE ?")
+            args.add("%$searchQuery%")
+        }
 
         // Joins for filtering
         if (filterAuthorIds.isNotEmpty()) {

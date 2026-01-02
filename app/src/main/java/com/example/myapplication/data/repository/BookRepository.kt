@@ -14,7 +14,8 @@ interface BookRepository {
         filterReadingStatus: String? = null,
         filterAuthorIds: List<Long> = emptyList(),
         filterGenreIds: List<Long> = emptyList(),
-        filterTagIds: List<Long> = emptyList()
+        filterTagIds: List<Long> = emptyList(),
+        searchQuery: String? = null
     ): Flow<List<BookWithInfo>>
 
     fun getBookById(id: Long): Flow<BookWithInfo?>

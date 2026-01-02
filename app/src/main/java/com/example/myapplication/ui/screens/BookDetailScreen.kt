@@ -7,10 +7,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -30,6 +29,7 @@ fun BookDetailScreen(
 ) {
     val uriHandler = LocalUriHandler.current
     val bookWithInfo by viewModel.getBookById(bookId).collectAsState(initial = null)
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -44,10 +44,36 @@ fun BookDetailScreen(
                     IconButton(onClick = { onEditClick(bookId) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
+                    IconButton(onClick = { showDeleteDialog = true }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    }
                 }
             )
         }
     ) { innerPadding ->
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Delete Book") },
+                text = { Text("Are you sure you want to delete this book? This action cannot be undone.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteBook(bookId)
+                            showDeleteDialog = false
+                            onNavigateBack()
+                        }
+                    ) {
+                        Text("Delete")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
         if (bookWithInfo != null) {
             val book = bookWithInfo!!.book
             Column(

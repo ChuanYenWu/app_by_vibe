@@ -11,6 +11,7 @@ import com.example.myapplication.data.local.entity.*
 import com.example.myapplication.data.repository.BookRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,15 +37,31 @@ class BookViewModel(private val repository: BookRepository) : ViewModel() {
     private val _filterTagIds = MutableStateFlow<List<Long>>(emptyList())
     val filterTagIds: StateFlow<List<Long>> = _filterTagIds
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
+
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val allBooks: StateFlow<List<BookWithInfo>> = combine(
-        _sortOrder,
-        _filterReadingStatus,
-        _filterAuthorIds,
-        _filterGenreIds,
-        _filterTagIds
-    ) { sort, status, authors, genres, tags ->
-        repository.getBooksByFilter(sort, status, authors, genres, tags)
+        listOf(
+            _sortOrder,
+            _filterReadingStatus,
+            _filterAuthorIds,
+            _filterGenreIds,
+            _filterTagIds,
+            _searchQuery
+        )
+    ) { args ->
+        val sort = args[0] as SortOrder
+        val status = args[1] as String?
+        @Suppress("UNCHECKED_CAST")
+        val authors = args[2] as List<Long>
+        @Suppress("UNCHECKED_CAST")
+        val genres = args[3] as List<Long>
+        @Suppress("UNCHECKED_CAST")
+        val tags = args[4] as List<Long>
+        val query = args[5] as String
+        
+        repository.getBooksByFilter(sort, status, authors, genres, tags, query)
     }.flatMapLatest { it }
         .stateIn(
             scope = viewModelScope,
@@ -53,6 +70,7 @@ class BookViewModel(private val repository: BookRepository) : ViewModel() {
         )
     
     fun setSortOrder(order: SortOrder) { _sortOrder.value = order }
+    fun setSearchQuery(query: String) { _searchQuery.value = query }
     fun setFilterReadingStatus(status: String?) { _filterReadingStatus.value = status }
     fun setFilterAuthors(ids: List<Long>) { _filterAuthorIds.value = ids }
     fun setFilterGenres(ids: List<Long>) { _filterGenreIds.value = ids }
@@ -130,6 +148,16 @@ class BookViewModel(private val repository: BookRepository) : ViewModel() {
     fun deleteGenre(genre: Genre) { viewModelScope.launch { repository.deleteGenre(genre) } }
     fun updateTag(tag: Tag) { viewModelScope.launch { repository.updateTag(tag) } }
     fun deleteTag(tag: Tag) { viewModelScope.launch { repository.deleteTag(tag) } }
+
+    fun deleteBook(bookId: Long) {
+        viewModelScope.launch {
+            // We need to fetch the book first to delete it because the DAO requires the entity
+            // In a real app we might want to optimize this to delete by ID directly in DAO
+            repository.getBookById(bookId).firstOrNull()?.let { bookWithInfo ->
+                 repository.deleteBook(bookWithInfo.book)
+            }
+        }
+    }
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
